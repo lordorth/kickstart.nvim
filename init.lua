@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -666,6 +666,28 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
+        pylsp = {
+          settings = {
+            pylsp = {
+              plugins = {
+                -- formatter options
+                black = { enabled = true },
+                autopep8 = { enabled = false },
+                yapf = { enabled = false },
+                -- linter options
+                pylint = { enabled = false, executable = 'pylint' },
+                pyflakes = { enabled = false },
+                pycodestyle = { enabled = false },
+                -- type checker
+                pylsp_mypy = { enabled = true },
+                -- auto-completion options
+                jedi_completion = { fuzzy = true },
+                -- import sorting
+                pyls_isort = { enabled = true },
+              },
+            },
+          },
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -673,7 +695,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
 
         lua_ls = {
@@ -713,6 +735,7 @@ require('lazy').setup({
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -727,7 +750,22 @@ require('lazy').setup({
       }
     end,
   },
-
+  {
+    'linux-cultist/venv-selector.nvim',
+    dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
+    opts = {
+      name = { 'venv', '.venv' },
+      -- Your options go here
+      -- name = "venv",
+      -- auto_refresh = false
+    },
+    keys = {
+      -- Keymap to open VenvSelector to pick a venv.
+      { '<leader>vs', '<cmd>VenvSelect<cr>' },
+      -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
+      { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
+    },
+  },
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
@@ -763,10 +801,10 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        python = { 'isort', 'black' },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -894,20 +932,22 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    'catppuccin/nvim',
+    name = 'catppuccin',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
+      require('catppuccin').setup {
+        color_overrides = {
+          all = {
+            base = '#000000',
+          },
         },
       }
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'catppuccin-mocha'
     end,
   },
 
@@ -957,7 +997,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'python', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -976,7 +1016,55 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-
+  {
+    'shortcuts/no-neck-pain.nvim',
+    config = function()
+      require('lazy').setup { { 'shortcuts/no-neck-pain.nvim', version = '*', width = 120 } }
+    end,
+  },
+  {
+    'nanozuki/tabby.nvim',
+    -- event = 'VimEnter', -- if you want lazy load, see below
+    dependencies = 'nvim-tree/nvim-web-devicons',
+    config = function()
+      -- configs...
+      require('tabby').setup {
+        preset = 'active_wins_at_tail',
+        option = {
+          theme = {
+            fill = 'TabLineFill', -- tabline background
+            head = 'TabLine', -- head element highlight
+            current_tab = 'TabLineSel', -- current tab label highlight
+            tab = 'TabLine', -- other tab label highlight
+            win = 'TabLine', -- window highlight
+            tail = 'TabLine', -- tail element highlight
+          },
+          nerdfont = true, -- whether use nerdfont
+          lualine_theme = nil, -- lualine theme name
+          tab_name = {
+            name_fallback = function(tabid)
+              -- return tabid
+              return ''
+            end,
+          },
+          buf_name = {
+            mode = 'unique', -- or 'relative', 'tail', 'shorten'
+          },
+        },
+      }
+      vim.api.nvim_set_keymap('n', '<leader>ta', ':$tabnew<CR>', { noremap = true })
+      vim.api.nvim_set_keymap('n', '<leader>tc', ':tabclose<CR>', { noremap = true })
+      vim.api.nvim_set_keymap('n', '<leader>to', ':tabonly<CR>', { noremap = true })
+      vim.api.nvim_set_keymap('n', '<leader>tn', ':tabn<CR>', { noremap = true })
+      vim.api.nvim_set_keymap('n', '<leader>tp', ':tabp<CR>', { noremap = true })
+      -- move current tab to previous position
+      vim.api.nvim_set_keymap('n', '<leader>tmp', ':-tabmove<CR>', { noremap = true })
+      -- move current tab to next position
+      vim.api.nvim_set_keymap('n', '<leader>tmn', ':+tabmove<CR>', { noremap = true })
+      vim.o.showtabline = 2
+      vim.opt.sessionoptions = 'curdir,folds,globals,help,tabpages,terminal,winsize'
+    end,
+  },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -987,10 +1075,10 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
